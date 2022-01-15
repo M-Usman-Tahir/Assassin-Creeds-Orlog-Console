@@ -26,11 +26,14 @@ public class main {
 		if(command.equals("Orlog")) {
 			TakeNames(Arguments);
 		}else if(command.equals("roll")) {
-			TakeRolls(Arguments);
+			if(TakeRolls(Arguments)) {
+				println("OK");
+			}
 		}else if(command.equals("godfavor")) {
-			TakeGodFavor(Arguments);
-		}
-			else {
+			if(TakeGodFavor(Arguments)) {
+				println("OK");
+			}
+		}else {
 			println("Kindly enter correct command...");
 		}
 	}
@@ -45,9 +48,95 @@ public class main {
 				println(player1.getName());
 				turn = player1;
 			}
+		}else if(command.equals("evaluate")) {
+			if(player1.getRolls()==null||player2.getRolls()==null) {
+				println("Play rolls first...");
+			}else {
+				Evaluate();
+			}
 		}else {
 			println("Kindly enter correct command...");
 		}
+	}
+	
+	public static void Evaluate() {
+		player1.UseRoll();
+		player2.UseRoll();
+		int player1Melee = player1.getMeleeAttack()-player2.getMeleeDefense();
+		int player2Melee = player2.getMeleeAttack()-player1.getMeleeDefense();
+		int player1Range = player1.getRangeAttack()-player2.getRangeDefense();
+		int player2Range = player2.getRangeAttack()-player1.getRangeDefense();
+		if(player1Melee>0) {
+			player2.setLifePoints(player2.getLifePoints()-player1Melee);
+		}if(player1Range>0) {
+			player2.setLifePoints(player2.getLifePoints()-player1Range);
+		}if(player2Melee>0) {
+			player1.setLifePoints(player1.getLifePoints()-player2Melee);
+		}if(player2Range>0) {
+			player1.setLifePoints(player1.getLifePoints()-player2Range);
+		}if(player2.getGodPower()>0) {
+			int difference = player2.getGodPower()-player1.getSteal();
+			if(difference<0) {
+				player1.setSteal(player1.getSteal()+difference);
+			}
+			player2.setGodPower(player2.getGodPower()-player1.getSteal());
+			player1.setGodPower(player1.getGodPower()+player1.getSteal());
+		}if(player1.getGodPower()>0) {
+			int difference = player1.getGodPower()-player2.getSteal();
+			if(difference<0) {
+				player2.setSteal(player2.getSteal()+difference);
+			}
+			player1.setGodPower(player1.getGodPower()-player2.getSteal());
+			player2.setGodPower(player2.getGodPower()+player2.getSteal());
+		}GodFavorEvaluate();
+		if(player1.getLifePoints()<1) {
+			if(player2.getLifePoints()<1) {
+				println("Draw");
+			}else {
+				println(player2.getName()+" wins");
+			}
+		}else if(player2.getLifePoints()<1) {
+			println(player1.getName()+" wins");
+		}else {
+			printPlayers();
+		}resetPlayers();
+	}
+	
+	public static void GodFavorEvaluate() {
+		try {
+			godFavor player1GodFavor = new godFavor(player1.getGodFavorSelected(), player1.getGodFavorLevel());
+			godFavor player2GodFavor = new godFavor(player2.getGodFavorSelected(), player2.getGodFavorLevel());
+			if(player1GodFavor.getCost()<player1.getGodPower()) {				
+				if(player1GodFavor.getName().equals("TT")) {
+					player2GodFavor = new godFavor(player2.getGodFavorSelected(), player2.getGodFavorLevel()-player1GodFavor.getEffect());
+				}
+			}else if(player2GodFavor.getCost()<player1.getGodPower()) {				
+				if(player2GodFavor.getName().equals("TT")) {
+					player1GodFavor = new godFavor(player1.getGodFavorSelected(), player1.getGodFavorLevel()-player2GodFavor.getEffect());
+				}
+			}if(player1GodFavor.getCost()<player1.getGodPower()) {
+				if(player1GodFavor.getName().equals("TS")) {
+					player2.setLifePoints(player2.getLifePoints()-player1GodFavor.getEffect());
+				}else if(player1GodFavor.getName().equals("IR")){
+					player1.setLifePoints(player1.getLifePoints()+player1GodFavor.getEffect());
+				}
+			}if(player2GodFavor.getCost()<player2.getGodPower()) {
+				if(player2GodFavor.getName().equals("TS")) {
+					player1.setLifePoints(player1.getLifePoints()-player2GodFavor.getEffect());
+				}else if(player2GodFavor.getName().equals("IR")) {
+					player2.setLifePoints(player2.getLifePoints()+player2GodFavor.getEffect());
+				}
+			}
+		}catch(Exception e) {
+			print(e.getStackTrace());
+		}
+	}
+	
+	public static void resetPlayers() {
+		player1.resetFavors();
+		player2.resetFavors();
+		player1.resetRolls();
+		player2.resetRolls();
 	}
 	
 	public static boolean TakeNames(String Arguments) {
@@ -98,29 +187,24 @@ public class main {
 			}RollList[i] = roll;
 		}
 		turn.setRolls(RollList);
-		printL(RollList);
-		turn.setGodPower(GodPowerRoll);
+		turn.setGodPower(turn.getGodPower()+GodPowerRoll);
 		return true;
 	}
 	
-	public static void TakeGodFavor(String Arguments) {
+	public static boolean TakeGodFavor(String Arguments) {
 		String[] ArgumentList = Arguments.split(";");
 		String Favor = ArgumentList[0];
 		byte level = Byte.parseByte(ArgumentList[1]);
 		if(!Arrays.stream(godFavor.getFavors()).anyMatch(Favor::equals)) {
 			println("God Favor doesn't exist...");
+			return false;
 		}else if(level>3||level<1) {
 			println("God Favor level is not valid...");
-		}else {
-			turn.setGodFavorSelected(Favor);
-			turn.setGodFavorLevel(level);
+			return false;
 		}
-	}
-	
-	public static void printL(String[] list) {
-		for(String str: list) {
-			println(str);
-		}
+		turn.setGodFavorSelected(Favor);
+		turn.setGodFavorLevel(level);
+		return true;
 	}
 	
 	public static void printPlayers() {
@@ -131,7 +215,7 @@ public class main {
 	
 	public static void end() {
 		in.close();
-		print("----------------------------\nProgram Ended\n----------------------------");
+//		print("----------------------------\nProgram Ended\n----------------------------");
 	}
 
 	public static void main(String[] args) {

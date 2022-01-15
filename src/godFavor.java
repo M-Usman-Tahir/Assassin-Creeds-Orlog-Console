@@ -2,11 +2,11 @@
 public class godFavor {
 	private static final String[] Favors = {"TS", "TT", "IR"};
 	private String Name;
-	private byte Level;
+	private int Level;
 	private int Cost;
 	private int Effect;
 	
-	public godFavor(String name, byte level) {
+	public godFavor(String name, int level) {
 		super();
 		if(name.equals("TS")) {
 			Cost = level*4;
@@ -31,7 +31,7 @@ public class godFavor {
 	public String getName() {
 		return Name;
 	}
-	public byte getLevel() {
+	public int getLevel() {
 		return Level;
 	}
 	public static String[] getFavors() {
